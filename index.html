@@ -15,7 +15,7 @@
   <div class="flex flex-col items-center p-8 space-y-4 relative z-10">
     <!-- Listens Pill -->
     <div class="mb-2">
-      <span id="listenPill" class="px-4 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">listens: 0</span>
+      <span id="listenPill" class="px-4 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold" hidden>listens: 0</span>
     </div>
     <!-- Album Cover with fixed size and image -->
     <div class="w-48 h-48 rounded-lg flex items-center justify-center mb-2 bg-center bg-cover relative"
@@ -48,8 +48,8 @@
     </audio>
   </div>
   <div class="fixed bottom-10 left-1/2 -translate-x-1/2 flex items-center space-x-3 z-50">
-    <!-- YouTube Banner -->
-    <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank"
+    <!-- YouTube Subscribe Banner -->
+    <a href="https://www.youtube.com/@jbtdt?sub_confirmation=1" target="_blank"
        class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-md shadow-lg flex items-center space-x-3 transition">
       <!-- YouTube Icon SVG -->
       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -70,87 +70,112 @@
      class="fixed bottom-2 left-1/2 -translate-x-1/2 text-xs text-gray-500 hover:text-blue-600 z-50 transition">
     Powered by Space Yangu
   </a>
+  <!-- Add this where your audio element was, but keep it hidden -->
+  <div id="hidden-player" class="hidden"></div>
+  <script src="https://www.youtube.com/iframe_api"></script>
   <script>
-  const audioPlayer = document.getElementById('audioPlayer');
-  const playBtn = document.getElementById('playBtn');
-  const playIcon = document.getElementById('playIcon');
-  const pauseIcon = document.getElementById('pauseIcon');
-  const circleAnim = document.getElementById('circleAnim');
-  const listenPill = document.getElementById('listenPill');
-  let audioLoaded = true;
-
-  // On window load, fetch listen count
-  window.addEventListener('DOMContentLoaded', async () => {
-    try {
-      const res = await fetch('/play');
-      const data = await res.json();
-      listenPill.textContent = `listens: ${data.count}`;
-    } catch (e) {
-      listenPill.textContent = 'listens: ?';
+    var player;
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('hidden-player', {
+        videoId: 'f8dBHbvGEOI', // Example YouTube video ID
+        events: {
+          'onReady': onPlayerReady
+        }
+      });
     }
-  });
 
-  // Save to localStorage that user has listened
-  function markListened() {
-    localStorage.setItem('hasListened', 'true');
-  }
+    function onPlayerReady(event) {
+      // Player is ready, but do nothing yet
+    }
 
-  playBtn.addEventListener('click', async function() {
-    if (audioLoaded) {
-      if (audioPlayer.paused) {
-        audioPlayer.play();
+    // --- Replace audioPlayer logic with YouTube player logic ---
+    const playBtn = document.getElementById('playBtn');
+    const playIcon = document.getElementById('playIcon');
+    const pauseIcon = document.getElementById('pauseIcon');
+    const circleAnim = document.getElementById('circleAnim');
+    const listenPill = document.getElementById('listenPill');
+    let hasListened = localStorage.getItem('hasListened') === 'true';
+
+    // On window load, fetch listen count
+    window.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const res = await fetch('/play');
+        const data = await res.json();
+        listenPill.textContent = `listens: ${data.count}`;
+      } catch (e) {
+        listenPill.textContent = 'listens: ?';
+      }
+    });
+
+    playBtn.addEventListener('click', async function() {
+      if (!player) return;
+      const state = player.getPlayerState();
+      // 1 = playing, 2 = paused, 0 = ended, 5 = cued
+      if (state !== 1) {
+        player.playVideo();
         playIcon.classList.add('hidden');
         pauseIcon.classList.remove('hidden');
         circleAnim.classList.remove('hidden');
         circleAnim.classList.add('animate-spin-slow');
-
-        // Only POST if not already listened
-        if (!localStorage.getItem('hasListened')) {
-          markListened();
+        if (!hasListened) {
+          localStorage.setItem('hasListened', 'true');
+          hasListened = true;
           try {
             const res = await fetch('/play', { method: 'POST' });
             const data = await res.json();
             listenPill.textContent = `listens: ${data.count}`;
-          } catch (e) {
-            // ignore error
-          }
+          } catch (e) {}
         }
       } else {
-        audioPlayer.pause();
+        player.pauseVideo();
         playIcon.classList.remove('hidden');
         pauseIcon.classList.add('hidden');
         circleAnim.classList.add('hidden');
         circleAnim.classList.remove('animate-spin-slow');
       }
-    } else {
-      alert('Please select an audio file first.');
-    }
-  });
+    });
 
-  audioPlayer.addEventListener('ended', function() {
-    playIcon.classList.remove('hidden');
-    pauseIcon.classList.add('hidden');
-    circleAnim.classList.add('hidden');
-    circleAnim.classList.remove('animate-spin-slow');
-  });
-
-  // Share button logic
-  const shareBtn = document.getElementById('shareBtn');
-  shareBtn.addEventListener('click', async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: document.title,
-          text: "Check out this player!",
-          url: window.location.href
-        });
-      } catch (e) {
-        // User cancelled or error
+    // Listen for state changes to update UI
+    function onPlayerStateChange(event) {
+      if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+        playIcon.classList.remove('hidden');
+        pauseIcon.classList.add('hidden');
+        circleAnim.classList.add('hidden');
+        circleAnim.classList.remove('animate-spin-slow');
       }
-    } else {
-      alert("Sharing is not supported on this device.");
+      if (event.data === YT.PlayerState.PLAYING) {
+        playIcon.classList.add('hidden');
+        pauseIcon.classList.remove('hidden');
+        circleAnim.classList.remove('hidden');
+        circleAnim.classList.add('animate-spin-slow');
+      }
     }
-  });
+    // Attach state change event after player is ready
+    window.onYouTubeIframeAPIReady = function() {
+      player = new YT.Player('hidden-player', {
+        videoId: 'dQw4w9WgXcQ',
+        events: {
+          'onReady': onPlayerReady,
+          'onStateChange': onPlayerStateChange
+        }
+      });
+    };
+
+    // Share button logic
+    const shareBtn = document.getElementById('shareBtn');
+    shareBtn.addEventListener('click', async () => {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: document.title,
+            text: "Check out this player!",
+            url: window.location.href
+          });
+        } catch (e) {}
+      } else {
+        alert("Sharing is not supported on this device.");
+      }
+    });
   </script>
   <style>
     .animate-spin-slow {
