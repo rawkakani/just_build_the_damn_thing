@@ -6,7 +6,6 @@ Deno.serve(async (req) => {
   // /play endpoint for GET and POST
   if (url.pathname === "/play") {
     if (req.method === "POST") {
-      // Increment the counter atomically
       const res = await kv.atomic().sum(["plays"], 1n).commit();
       const count = res.value ?? 1n;
       return new Response(JSON.stringify({ count: Number(count) }), {
@@ -21,6 +20,18 @@ Deno.serve(async (req) => {
       });
     }
     return new Response("Method Not Allowed", { status: 405 });
+  }
+
+  // /background endpoint to serve the image
+  if (url.pathname === "/background") {
+    try {
+      const img = await Deno.readFile("./background.png");
+      return new Response(img, {
+        headers: { "content-type": "image/png" },
+      });
+    } catch {
+      return new Response("Not Found", { status: 404 });
+    }
   }
 
   // Serve index.html for all other routes

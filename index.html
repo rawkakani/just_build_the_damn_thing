@@ -8,15 +8,22 @@
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-  <div class="flex flex-col items-center p-8 space-y-4 relative">
+<body class="bg-gray-100 flex items-center justify-center min-h-screen relative"
+      style="background: url('/background') center center / cover no-repeat fixed;">
+  <!-- Background Blur Overlay -->
+  <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-0"></div>
+  <div class="flex flex-col items-center p-8 space-y-4 relative z-10">
     <!-- Listens Pill -->
     <div class="mb-2">
       <span id="listenPill" class="px-4 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">listens: 0</span>
     </div>
-    <!-- Cover Image Placeholder -->
-    <div class="w-48 h-48 bg-black rounded-lg flex items-center justify-center mb-2">
-      <span class="text-white text-center text-xl font-bold">Just Build The Damn Thing</span>
+    <!-- Album Cover with fixed size and image -->
+    <div class="w-48 h-48 rounded-lg flex items-center justify-center mb-2 bg-center bg-cover relative"
+         style="background-image: url('/background');">
+      <!-- Album cover content here -->
+      <!-- <span class="relative z-10 text-white text-center text-xl font-bold px-2 py-1 rounded">
+        Just Build The Damn Thing
+      </span> -->
     </div>
     <!-- Play Button -->
     <button id="playBtn" class="relative bg-blue-500 hover:bg-blue-600 text-white rounded-full p-6 shadow-lg focus:outline-none transition flex items-center justify-center">
@@ -64,15 +71,13 @@
     Powered by Space Yangu
   </a>
   <script>
-  // Remove audioInput related code
-  // const audioInput = document.getElementById('audioInput');
-  const playBtn = document.getElementById('playBtn');
   const audioPlayer = document.getElementById('audioPlayer');
+  const playBtn = document.getElementById('playBtn');
   const playIcon = document.getElementById('playIcon');
   const pauseIcon = document.getElementById('pauseIcon');
   const circleAnim = document.getElementById('circleAnim');
   const listenPill = document.getElementById('listenPill');
-  let audioLoaded = true; // Always true for hosted source
+  let audioLoaded = true;
 
   // On window load, fetch listen count
   window.addEventListener('DOMContentLoaded', async () => {
@@ -85,6 +90,7 @@
     }
   });
 
+  // Save to localStorage that user has listened
   function markListened() {
     localStorage.setItem('hasListened', 'true');
   }
@@ -116,6 +122,8 @@
         circleAnim.classList.add('hidden');
         circleAnim.classList.remove('animate-spin-slow');
       }
+    } else {
+      alert('Please select an audio file first.');
     }
   });
 
