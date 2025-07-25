@@ -77,9 +77,10 @@
     var player;
     function onYouTubeIframeAPIReady() {
       player = new YT.Player('hidden-player', {
-        videoId: 'f8dBHbvGEOI', // Example YouTube video ID
+        videoId: 'f8dBHbvGEOI', // Updated YouTube video ID
         events: {
-          'onReady': onPlayerReady
+          'onReady': onPlayerReady,
+          'onStateChange': onPlayerStateChange
         }
       });
     }
@@ -110,8 +111,12 @@
     playBtn.addEventListener('click', async function() {
       if (!player) return;
       const state = player.getPlayerState();
-      // 1 = playing, 2 = paused, 0 = ended, 5 = cued
+      // 0 = ended, 2 = paused, 5 = cued
       if (state !== 1) {
+        // Always start from beginning if ended
+        if (state === 0) {
+          player.seekTo(0);
+        }
         player.playVideo();
         playIcon.classList.add('hidden');
         pauseIcon.classList.remove('hidden');
@@ -153,7 +158,7 @@
     // Attach state change event after player is ready
     window.onYouTubeIframeAPIReady = function() {
       player = new YT.Player('hidden-player', {
-        videoId: 'dQw4w9WgXcQ',
+        videoId: 'f8dBHbvGEOI',
         events: {
           'onReady': onPlayerReady,
           'onStateChange': onPlayerStateChange
