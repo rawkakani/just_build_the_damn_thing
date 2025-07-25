@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Just Build The Damn Thing</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Two friends come together to build the dream, and share their journey and chaos on the journey to build the culture that South Africa deserves.">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="flex flex-col items-center p-8 space-y-4 relative">
+    <!-- Listens Pill -->
+    <div class="mb-2">
+      <span id="listenPill" class="px-4 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">listens: 0</span>
+    </div>
+    <!-- Cover Image Placeholder -->
+    <div class="w-48 h-48 bg-black rounded-lg flex items-center justify-center mb-2">
+      <span class="text-white text-center text-xl font-bold">Just Build The Damn Thing</span>
+    </div>
+    <!-- Play Button -->
+    <button id="playBtn" class="relative bg-blue-500 hover:bg-blue-600 text-white rounded-full p-6 shadow-lg focus:outline-none transition flex items-center justify-center">
+      <!-- Animated Circle SVG (hidden by default) -->
+      <svg id="circleAnim" class="absolute inset-0 w-full h-full hidden pointer-events-none" viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="24" r="20" stroke="#3B82F6" stroke-width="4" stroke-linecap="round" stroke-dasharray="100" stroke-dashoffset="25"/>
+      </svg>
+      <!-- Play Icon (SVG) -->
+      <svg id="playIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 32 32" fill="none">
+        <polygon points="10,6 26,16 10,26" fill="currentColor"/>
+      </svg>
+      <!-- Pause Icon (SVG, hidden by default) -->
+      <svg id="pauseIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 32 32" fill="none">
+        <rect x="10" y="6" width="4" height="20" fill="currentColor"/>
+        <rect x="18" y="6" width="4" height="20" fill="currentColor"/>
+      </svg>
+    </button>
+    <!-- Hidden Audio Element with hosted source -->
+    <audio id="audioPlayer" class="hidden">
+      <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mp3">
+      Your browser does not support the audio element.
+    </audio>
+  </div>
+  <div class="fixed bottom-10 left-1/2 -translate-x-1/2 flex items-center space-x-3 z-50">
+    <!-- YouTube Banner -->
+    <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank"
+       class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-md shadow-lg flex items-center space-x-3 transition">
+      <!-- YouTube Icon SVG -->
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M23.498 6.186a2.994 2.994 0 0 0-2.107-2.117C19.228 3.5 12 3.5 12 3.5s-7.228 0-9.391.569A2.994 2.994 0 0 0 .502 6.186C0 8.36 0 12 0 12s0 3.64.502 5.814a2.994 2.994 0 0 0 2.107 2.117C4.772 20.5 12 20.5 12 20.5s7.228 0 9.391-.569a2.994 2.994 0 0 0 2.107-2.117C24 15.64 24 12 24 12s0-3.64-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+      </svg>
+      <span class="font-semibold">Subscribe</span>
+    </a>
+    <!-- Share Button -->
+    <button id="shareBtn" title="Share" class="bg-white/80 hover:bg-white text-blue-600 rounded-full p-2 shadow transition">
+      <!-- iOS-style Share Icon SVG -->
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          d="M12 16V4m0 0l4 4m-4-4l-4 4M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/>
+      </svg>
+    </button>
+  </div>
+  <a href="https://yangu.space" target="_blank"
+     class="fixed bottom-2 left-1/2 -translate-x-1/2 text-xs text-gray-500 hover:text-blue-600 z-50 transition">
+    Powered by Space Yangu
+  </a>
+  <script>
+  // Remove audioInput related code
+  // const audioInput = document.getElementById('audioInput');
+  const playBtn = document.getElementById('playBtn');
+  const audioPlayer = document.getElementById('audioPlayer');
+  const playIcon = document.getElementById('playIcon');
+  const pauseIcon = document.getElementById('pauseIcon');
+  const circleAnim = document.getElementById('circleAnim');
+  const listenPill = document.getElementById('listenPill');
+  let audioLoaded = true; // Always true for hosted source
+
+  // On window load, fetch listen count
+  window.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const res = await fetch('/play');
+      const data = await res.json();
+      listenPill.textContent = `listens: ${data.count}`;
+    } catch (e) {
+      listenPill.textContent = 'listens: ?';
+    }
+  });
+
+  function markListened() {
+    localStorage.setItem('hasListened', 'true');
+  }
+
+  playBtn.addEventListener('click', async function() {
+    if (audioLoaded) {
+      if (audioPlayer.paused) {
+        audioPlayer.play();
+        playIcon.classList.add('hidden');
+        pauseIcon.classList.remove('hidden');
+        circleAnim.classList.remove('hidden');
+        circleAnim.classList.add('animate-spin-slow');
+
+        // Only POST if not already listened
+        if (!localStorage.getItem('hasListened')) {
+          markListened();
+          try {
+            const res = await fetch('/play', { method: 'POST' });
+            const data = await res.json();
+            listenPill.textContent = `listens: ${data.count}`;
+          } catch (e) {
+            // ignore error
+          }
+        }
+      } else {
+        audioPlayer.pause();
+        playIcon.classList.remove('hidden');
+        pauseIcon.classList.add('hidden');
+        circleAnim.classList.add('hidden');
+        circleAnim.classList.remove('animate-spin-slow');
+      }
+    }
+  });
+
+  audioPlayer.addEventListener('ended', function() {
+    playIcon.classList.remove('hidden');
+    pauseIcon.classList.add('hidden');
+    circleAnim.classList.add('hidden');
+    circleAnim.classList.remove('animate-spin-slow');
+  });
+
+  // Share button logic
+  const shareBtn = document.getElementById('shareBtn');
+  shareBtn.addEventListener('click', async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: document.title,
+          text: "Check out this player!",
+          url: window.location.href
+        });
+      } catch (e) {
+        // User cancelled or error
+      }
+    } else {
+      alert("Sharing is not supported on this device.");
+    }
+  });
+  </script>
+  <style>
+    .animate-spin-slow {
+      animation: spin 1.2s linear infinite;
+    }
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</body>
+</html>
