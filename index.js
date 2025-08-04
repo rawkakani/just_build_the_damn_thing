@@ -25,9 +25,9 @@ Deno.serve(async (req) => {
   // /background endpoint to serve the image
   if (url.pathname === "/background") {
     try {
-      const img = await Deno.readFile("./background.png");
+      const img = await Deno.readFile("./background.jpeg");
       return new Response(img, {
-        headers: { "content-type": "image/png" },
+        headers: { "content-type": "image/jpeg" },
       });
     } catch {
       return new Response("Not Found", { status: 404 });
